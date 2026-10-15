@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f0d1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>🎰 Рулетка подарков</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow-x:hidden}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:radial-gradient(circle at 50% 0%,#1a1030,#0a0a12 70%);
+  color:#e9edf2;
+  min-height:100vh;
+  padding:20px;
+  padding-top:calc(20px + env(safe-area-inset-top));
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;align-items:center;
+}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.95)}to{opacity:1;transform:none}}
+@keyframes floatUp{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-100px)}}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(400px) rotate(720deg);opacity:0}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+.header{text-align:center;margin-bottom:20px;animation:pop .5s}
+.title{
+  font-size:clamp(28px,7vw,42px);
+  font-weight:900;
+  letter-spacing:-.03em;
+  background:linear-gradient(135deg,#ffc84a,#ff5cb8,#a855f7);
+  background-size:200% 200%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:pulse 3s infinite;
+  margin-bottom:8px;
+}
+.subtitle{color:#8b8ba0;font-size:14px}
+
+.wallet{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:100px;
+  background:linear-gradient(135deg,rgba(255,200,74,.15),rgba(255,92,184,.1));
+  border:1px solid rgba(255,200,74,.3);
+  color:#ffc84a;font-weight:700;font-size:16px;
+  margin-bottom:20px;
+  animation:pop .5s .1s backwards;
+}
+
+/* ROULETTE */
+.roulette-wrap{
+  width:100%;max-width:420px;
+  margin-bottom:20px;
+  padding:16px;
+  background:linear-gradient(145deg,#1a1030,#0f0d1e);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  position:relative;overflow:hidden;
+  animation:pop .5s .2s backwards;
+  box-shadow:0 20px 60px rgba(124,92,255,.2);
+}
+.roulette-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(255,200,74,.15),transparent 60%);
+  pointer-events:none;
+}
+.roulette-window{
+  position:relative;height:240px;overflow:hidden;
+  border-radius:16px;
+  background:linear-gradient(180deg,rgba(0,0,0,.4),rgba(0,0,0,.15),rgba(0,0,0,.4));
+}
+.roulette-window::before,.roulette-window::after{
+  content:'';position:absolute;left:0;right:0;height:60px;z-index:3;pointer-events:none;
+}
+.roulette-window::before{top:0;background:linear-gradient(180deg,rgba(15,13,30,1),rgba(15,13,30,0))}
+.roulette-window::after{bottom:0;background:linear-gradient(0deg,rgba(15,13,30,1),rgba(15,13,30,0))}
+.roulette-track{display:flex;flex-direction:column;will-change:transform}
+.roulette-item{
+  height:80px;display:flex;align-items:center;justify-content:center;
+  font-size:44px;flex-shrink:0;opacity:.55;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));
+}
+.roulette-item.win{opacity:1;filter:drop-shadow(0 0 20px rgba(255,200,74,.9))}
+.roulette-marker{
+  position:absolute;top:50%;left:0;right:0;height:80px;transform:translateY(-50%);
+  border-top:2px solid #ffc84a;border-bottom:2px solid #ffc84a;
+  pointer-events:none;z-index:4;
+  background:linear-gradient(90deg,transparent,rgba(255,200,74,.1),transparent);
+  box-shadow:0 0 30px rgba(255,200,74,.5) inset;
+}
+.roulette-result{
+  text-align:center;font-size:16px;font-weight:700;
+  padding:14px;min-height:52px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:14px;margin-top:12px;
+  background:rgba(0,0,0,.3);
+  transition:all .3s;
+}
+.roulette-result.win{color:#ffc84a;background:linear-gradient(135deg,rgba(255,200,74,.15),rgba(255,92,184,.1));border:1px solid rgba(255,200,74,.3)}
+.roulette-result.lose{color:#8b8ba0}
+
+/* SPIN BUTTON */
+.spin-btn{
+  width:100%;max-width:420px;
+  padding:18px;border-radius:20px;border:none;
+  background:linear-gradient(135deg,#ffc84a,#ff9d3a);
+  color:#3a2010;font-weight:900;font-size:17px;
+  font-family:inherit;cursor:pointer;
+  transition:all .3s;
+  box-shadow:0 10px 30px rgba(255,200,74,.4);
+  animation:pop .5s .3s backwards;
+  position:relative;overflow:hidden;
+  margin-bottom:16px;
+}
+.spin-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);
+  background-size:200% 100%;
+  animation:shine 3s infinite;
+}
+@keyframes shine{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.spin-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 16px 50px rgba(255,200,74,.6)}
+.spin-btn:active:not(:disabled){transform:translateY(-1px)}
+.spin-btn:disabled{opacity:.6;cursor:not-allowed}
+
+/* PROMO */
+.promo-section{
+  width:100%;max-width:420px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:18px;
+  animation:pop .5s .4s backwards;
+}
+.promo-title{
+  font-size:14px;font-weight:700;color:#8b8ba0;
+  text-transform:uppercase;letter-spacing:.08em;
+  margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+}
+.promo-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:100px;
+  background:linear-gradient(135deg,#ffc84a,#ff9d3a);
+  color:#3a2010;font-weight:700;font-size:12px;
+  margin-left:auto;
+}
+.promo-row{display:flex;gap:8px}
+.promo-input{
+  flex:1;padding:14px 16px;
+  background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;
+  color:#fff;font-size:15px;font-family:inherit;
+  outline:none;transition:border .2s;
+  text-transform:uppercase;
+}
+.promo-input:focus{border-color:#ffc84a}
+.promo-input::placeholder{color:#5a5a70}
+.promo-btn{
+  padding:14px 22px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,#ffc84a,#ff9d3a);
+  color:#3a2010;font-weight:800;font-size:15px;
+  font-family:inherit;cursor:pointer;
+  transition:all .2s;flex-shrink:0;
+}
+.promo-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(255,200,74,.4)}
+.promo-status{
+  margin-top:10px;font-size:13.5px;
+  text-align:center;min-height:20px;
+  color:#8b8ba0;
+}
+.promo-status.ok{color:#4dcd5e}
+.promo-status.err{color:#e05c5c}
+
+/* STATS */
+.stats{
+  width:100%;max-width:420px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:10px;margin-top:16px;
+  animation:pop .5s .5s backwards;
+}
+.stat{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:14px 10px;
+  text-align:center;
+}
+.stat-val{font-size:20px;font-weight:800;color:#ffc84a}
+.stat-lbl{font-size:11px;color:#8b8ba0;margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+
+/* HISTORY */
+.history{
+  width:100%;max-width:420px;
+  margin-top:20px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:18px;
+  animation:pop .5s .6s backwards;
+}
+.history-title{font-size:14px;font-weight:700;color:#8b8ba0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.history-list{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto}
+.history-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px;border-radius:10px;
+  background:rgba(0,0,0,.2);
+  font-size:13.5px;
+}
+.history-emoji{font-size:24px}
+.history-text{flex:1}
+.history-win{color:#ffc84a;font-weight:600}
+.history-lose{color:#8b8ba0}
+.history-empty{text-align:center;color:#5a5a70;font-size:13px;padding:20px}
+
+/* GIFTS PREVIEW */
+.gifts-preview{
+  width:100%;max-width:420px;
+  margin-top:20px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:18px;
+  animation:pop .5s .7s backwards;
+}
+.gifts-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.gift-mini{
+  aspect-ratio:1;border-radius:12px;
+  background:rgba(0,0,0,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  border:1px solid rgba(255,255,255,.05);
+  transition:transform .2s;
+}
+.gift-mini:hover{transform:scale(1.1)}
+.gift-mini.owned{background:linear-gradient(135deg,rgba(255,200,74,.2),rgba(255,92,184,.1));border-color:rgba(255,200,74,.4)}
+
+/* FLYING + CONFETTI */
+.flying-gift{position:fixed;font-size:56px;pointer-events:none;z-index:9998;animation:floatUp 1.5s ease-out forwards;filter:drop-shadow(0 0 20px rgba(255,200,74,.8))}
+.confetti-piece{position:fixed;pointer-events:none;z-index:9999;font-size:22px;animation:confettiFall 2.5s ease-out forwards}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));
+  left:50%;transform:translateX(-50%) translateY(150px);
+  background:#1a1a2e;border:1px solid rgba(255,255,255,.1);
+  color:#fff;padding:14px 24px;border-radius:14px;
+  font-size:14px;z-index:9999;
+  transition:transform .4s;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  max-width:90%;text-align:center;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">🎰 Рулетка подарков</div>
+  <div class="subtitle">Крути и выигрывай редкие подарки</div>
+</div>
+
+<div class="wallet" id="wallet">🎁 <span id="walletCount">0</span> подарков</div>
+
+<div class="roulette-wrap">
+  <div class="roulette-window">
+    <div class="roulette-track" id="rouletteTrack"></div>
+    <div class="roulette-marker"></div>
+  </div>
+  <div class="roulette-result" id="rouletteResult">Нажми «Крутить», чтобы начать</div>
+</div>
+
+<button class="spin-btn" id="spinBtn">🎰 Крутить (1.5% шанс)</button>
+
+<div class="promo-section">
+  <div class="promo-title">
+    🎟️ Промокод (70% шанс)
+    <span class="promo-badge" id="promoBadge" style="display:none">×<span id="promoCount">0</span></span>
+  </div>
+  <div class="promo-row">
+    <input type="text" class="promo-input" id="promoInput" placeholder="NEO70-FREE-0001">
+    <button class="promo-btn" id="promoBtn">OK</button>
+  </div>
+  <div class="promo-status" id="promoStatus"></div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val" id="statSpins">0</div><div class="stat-lbl">Круток</div></div>
+  <div class="stat"><div class="stat-val" id="statWins">0</div><div class="stat-lbl">Побед</div></div>
+  <div class="stat"><div class="stat-val" id="statRate">0%</div><div class="stat-lbl">Процент</div></div>
+</div>
+
+<div class="gifts-preview">
+  <div class="history-title">🎁 Все подарки</div>
+  <div class="gifts-grid" id="giftsGrid"></div>
+</div>
+
+<div class="history">
+  <div class="history-title">📜 История</div>
+  <div class="history-list" id="historyList">
+    <div class="history-empty">Пока пусто</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GIFTS = [
+  {id:'bear',name:'Мишка',emoji:'🧸',rarity:'common'},
+  {id:'rose',name:'Роза',emoji:'🌹',rarity:'common'},
+  {id:'heart',name:'Сердце',emoji:'❤️',rarity:'rare'},
+  {id:'cake',name:'Торт',emoji:'🎂',rarity:'rare'},
+  {id:'ring',name:'Кольцо',emoji:'💍',rarity:'epic'},
+  {id:'rocket',name:'Ракета',emoji:'🚀',rarity:'epic'},
+  {id:'crown',name:'Корона',emoji:'👑',rarity:'legendary'},
+  {id:'crystal',name:'Кристалл',emoji:'🔮',rarity:'common'},
+  {id:'star',name:'Звезда',emoji:'⭐',rarity:'rare'},
+  {id:'dragon',name:'Дракон',emoji:'🐉',rarity:'epic'},
+  {id:'unicorn',name:'Единорог',emoji:'🦄',rarity:'legendary'},
+  {id:'phoenix',name:'Феникс',emoji:'🔥',rarity:'mythic'},
+  {id:'moon',name:'Луна',emoji:'🌙',rarity:'legendary'},
+  {id:'cat',name:'Космокот',emoji:'🐱‍🚀',rarity:'mythic'},
+  {id:'alien',name:'Пришелец',emoji:'👽',rarity:'mythic'},
+  {id:'whale',name:'Кит',emoji:'🐳',rarity:'legendary'}
+];
+
+const PROMO_CODES = [
+  'NEO70-FREE-0001','NEO70-FREE-0002','NEO70-FREE-0003','NEO70-FREE-0004','NEO70-FREE-0005',
+  'NEO70-FREE-0006','NEO70-FREE-0007','NEO70-FREE-0008','NEO70-FREE-0009','NEO70-FREE-0010'
+];
+
+const BASE_CHANCE = 0.015;      // 1.5% обычная
+const PROMO_CHANCE = 0.70;      // 70% с промокодом
+
+const $ = id => document.getElementById(id);
+
+// СОСТОЯНИЕ
+let state = {
+  gifts: [],       // выигранные подарки
+  spins: 0,
+  wins: 0,
+  history: [],     // последние 50
+  promos: {},      // использованные промокоды
+  promoSpins: 0    // осталось промо-вращений
+};
+
+function load(){
+  try{
+    const s = localStorage.getItem('roulette_state');
+    if(s) state = Object.assign(state, JSON.parse(s));
+  }catch(e){}
+}
+function save(){
+  try{ localStorage.setItem('roulette_state', JSON.stringify(state)); }catch(e){}
+}
+function toast(text){
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function flyGift(emoji, fromEl){
+  const g = document.createElement('div');
+  g.className = 'flying-gift';
+  g.textContent = emoji;
+  const r = fromEl ? fromEl.getBoundingClientRect() : {left:innerWidth/2,top:innerHeight/2};
+  g.style.left = r.left + 'px';
+  g.style.top = r.top + 'px';
+  document.body.appendChild(g);
+  setTimeout(()=>g.remove(), 1600);
+}
+function confetti(n=30){
+  for(let i=0;i<n;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.textContent = ['🎉','✨','⭐','🎊','💫','🌟'][Math.floor(Math.random()*6)];
+    c.style.left = (innerWidth/2 + (Math.random()-.5)*400) + 'px';
+    c.style.top = (innerHeight/2 - 100) + 'px';
+    c.style.animationDelay = (Math.random()*.5) + 's';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 3000);
+  }
+}
+
+// UI ОБНОВЛЕНИЕ
+function updateUI(){
+  $('walletCount').textContent = state.gifts.length;
+  $('statSpins').textContent = state.spins;
+  $('statWins').textContent = state.wins;
+  const rate = state.spins > 0 ? Math.round(state.wins/state.spins*1000)/10 : 0;
+  $('statRate').textContent = rate + '%';
+
+  // Промо-баланс
+  if(state.promoSpins > 0){
+    $('promoBadge').style.display = 'inline-flex';
+    $('promoCount').textContent = state.promoSpins;
+    $('spinBtn').textContent = '🎰 Крутить (' + Math.round(PROMO_CHANCE*100) + '% шанс)';
+    $('spinBtn').style.background = 'linear-gradient(135deg,#ff5cb8,#a855f7)';
+    $('spinBtn').style.color = '#fff';
+  } else {
+    $('promoBadge').style.display = 'none';
+    $('spinBtn').textContent = '🎰 Крутить (' + (BASE_CHANCE*100) + '% шанс)';
+    $('spinBtn').style.background = 'linear-gradient(135deg,#ffc84a,#ff9d3a)';
+    $('spinBtn').style.color = '#3a2010';
+  }
+
+  // Подарки
+  const ownedIds = state.gifts.map(g => g.id);
+  $('giftsGrid').innerHTML = GIFTS.map(g => {
+    const owned = ownedIds.includes(g.id);
+    return '<div class="gift-mini' + (owned?' owned':'') + '" title="' + g.name + '">' + g.emoji + '</div>';
+  }).join('');
+
+  // История
+  const hist = $('historyList');
+  if(!state.history.length){
+    hist.innerHTML = '<div class="history-empty">Пока пусто</div>';
+  } else {
+    hist.innerHTML = state.history.slice(0,50).map(h => 
+      '<div class="history-item">' +
+        '<div class="history-emoji">' + h.emoji + '</div>' +
+        '<div class="history-text ' + (h.win?'history-win':'history-lose') + '">' + h.text + '</div>' +
+        '<div style="font-size:11px;color:#5a5a70">' + h.time + '</div>' +
+      '</div>'
+    ).join('');
+  }
+}
+
+// ЛЕНТА РУЛЕТКИ
+function buildTrack(){
+  const track = $('rouletteTrack');
+  const items = [];
+  for(let i=0;i<60;i++){
+    if(Math.random() < 0.5) items.push(GIFTS[Math.floor(Math.random()*GIFTS.length)]);
+    else items.push(null);
+  }
+  track.innerHTML = items.map(it =>
+    it ? '<div class="roulette-item">' + it.emoji + '</div>'
+       : '<div class="roulette-item" style="font-size:32px;opacity:.35">❌</div>'
+  ).join('');
+  track.style.transition = 'none';
+  track.style.transform = 'translateY(0)';
+}
+
+// ВРАЩЕНИЕ
+let spinning = false;
+$('spinBtn').onclick = () => {
+  if(spinning) return;
+  spinning = true;
+  $('spinBtn').disabled = true;
+  $('rouletteResult').textContent = '...';
+  $('rouletteResult').className = 'roulette-result';
+
+  const usePromo = state.promoSpins > 0;
+  const chance = usePromo ? PROMO_CHANCE : BASE_CHANCE;
+  const win = Math.random() < chance;
+
+  // Выбираем подарок если победа
+  let winner = null;
+  if(win){
+    const r = Math.random();
+    let pool;
+    if(r < 0.4) pool = GIFTS.filter(g => g.rarity === 'common' || g.rarity === 'rare');
+    else if(r < 0.7) pool = GIFTS.filter(g => g.rarity === 'epic');
+    else if(r < 0.92) pool = GIFTS.filter(g => g.rarity === 'legendary');
+    else pool = GIFTS.filter(g => g.rarity === 'mythic');
+    if(!pool.length) pool = GIFTS;
+    winner = pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  // Лента с победителем
+  const WIN_INDEX = 45;
+  const items = [];
+  for(let i=0;i<60;i++){
+    if(i === WIN_INDEX){
+      items.push(winner);
+    } else {
+      if(Math.random() < 0.6) items.push(GIFTS[Math.floor(Math.random()*GIFTS.length)]);
+      else items.push(null);
+    }
+  }
+
+  const track = $('rouletteTrack');
+  track.innerHTML = items.map((it,i) => {
+    if(it) return '<div class="roulette-item' + (i===WIN_INDEX?' win':'') + '">' + it.emoji + '</div>';
+    return '<div class="roulette-item" style="font-size:32px;opacity:.35">❌</div>';
+  }).join('');
+
+  // Сброс
+  track.style.transition = 'none';
+  track.style.transform = 'translateY(0)';
+  void track.offsetWidth;
+
+  // Крутим к победителю (центр окна = 80px от верха)
+  const targetY = -(WIN_INDEX * 80) + 80;
+  const jitter = (Math.random() - 0.5) * 24;
+
+  requestAnimationFrame(() => {
+    track.style.transition = 'transform 4s cubic-bezier(.15,.7,.15,1)';
+    track.style.transform = 'translateY(' + (targetY + jitter) + 'px)';
+  });
+
+  // Результат
+  setTimeout(() => {
+    state.spins++;
+    const res = $('rouletteResult');
+    const time = new Date().toTimeString().slice(0,5);
+
+    if(winner){
+      state.wins++;
+      state.gifts.push(winner);
+      state.history.unshift({emoji:winner.emoji, text:'Выигрыш: ' + winner.name, win:true, time});
+      res.textContent = '🎉 Выпало: ' + winner.emoji + ' ' + winner.name + '!';
+      res.classList.add('win');
+      flyGift(winner.emoji, $('spinBtn'));
+      confetti(35);
+      toast('🎉 Подарок: ' + winner.name);
+    } else {
+      state.history.unshift({emoji:'❌', text:'Ничего не выпало', win:false, time});
+      res.textContent = '😢 Ничего не выпало. Попробуй ещё!';
+      res.classList.add('lose');
+    }
+
+    // Тратим промо
+    if(usePromo) state.promoSpins = Math.max(0, state.promoSpins - 1);
+
+    save();
+    updateUI();
+    spinning = false;
+    $('spinBtn').disabled = false;
+  }, 4100);
+};
+
+// ПРОМОКОД
+$('promoBtn').onclick = () => {
+  const code = $('promoInput').value.trim().toUpperCase();
+  const st = $('promoStatus');
+  st.className = 'promo-status';
+
+  if(!code){ st.textContent = 'Введи промокод'; st.classList.add('err'); return; }
+  if(!PROMO_CODES.includes(code)){ st.textContent = '❌ Неверный промокод'; st.classList.add('err'); return; }
+  if(state.promos[code]){ st.textContent = '❌ Уже использован'; st.classList.add('err'); return; }
+
+  state.promos[code] = true;
+  state.promoSpins = (state.promoSpins || 0) + 3;
+  save();
+  updateUI();
+
+  st.textContent = '✅ Активирован! +3 вращения с 70%';
+  st.classList.add('ok');
+  $('promoInput').value = '';
+  toast('🎟️ Промокод активирован');
+};
+
+// СТАРТ
+load();
+buildTrack();
+updateUI();
+
+// Обновлять ленту если долго не играли
+setInterval(() => { if(!spinning) buildTrack(); }, 60000);
+</script>
+</body>
+</html>
